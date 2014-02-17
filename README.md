@@ -7,7 +7,7 @@ VCRouter is UINavigationController's manager.
 Usage
 ----------
 
-#### Set-up UIWindow, and delegate
+### Setup UIWindow, and delegate
 
 ```objective-c
     [VCRouter mainRouter].window = self.window;
