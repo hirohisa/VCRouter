@@ -1,0 +1,258 @@
+//
+//  VCRouter.m
+//  VCRouter
+//
+//  Created by Hirohisa Kawasaki on 13/04/23.
+//  Copyright (c) 2013年 Hirohisa Kawasaki. All rights reserved.
+//
+
+#import <objc/runtime.h>
+#import "VCRouter.h"
+
+void VCSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
+{
+    Method orgMethod = class_getInstanceMethod(c, original);
+    Method altMethod = class_getInstanceMethod(c, alternative);
+    if(class_addMethod(c, original, method_getImplementation(altMethod), method_getTypeEncoding(altMethod))) {
+        class_replaceMethod(c, alternative, method_getImplementation(orgMethod), method_getTypeEncoding(orgMethod));
+    } else {
+        method_exchangeImplementations(orgMethod, altMethod);
+    }
+}
+
+//
+// NSArray
+//
+@implementation NSArray (VCRouter)
+
+- (NSUInteger)indexOfViewControllerWithClass:(Class)aClass
+{
+    NSUInteger index = 0;
+    for (id object in self) {
+        if ([object isMemberOfClass:aClass]) {
+            return index;
+        }
+        index++;
+    }
+    return NSNotFound;
+}
+
+@end
+
+//
+// UIWindow
+//
+@implementation UIWindow (VCRouter)
+
++ (void)load
+{
+    VCSwizzleInstanceMethod([self class], @selector(setRootViewController:), @selector(_setRootViewController:));
+}
+
+- (void)_setRootViewController:(UIViewController *)rootViewController
+{
+    if (self.rootViewController) {
+        for (UIView *view in self.subviews) {
+            [view removeFromSuperview];
+        }
+    }
+    [self _setRootViewController:rootViewController];
+}
+
+@end
+
+@interface UINavigationController (VCRouter)
+
+@property (nonatomic, assign) id<UINavigationControllerDelegate> VCDelegate;
+
+@end
+
+@implementation UINavigationController (VCRouter)
+
+static const char *VCRouterDelegateKey = "VCRouterDelegateKey";
+
++ (void)load
+{
+    VCSwizzleInstanceMethod([self class], @selector(setDelegate:), @selector(_setDelegate:));
+}
+
+- (void)_setDelegate:(id<UINavigationControllerDelegate>)delegate
+{
+    if (self.delegate) {
+        if ([[delegate class] isSubclassOfClass:[VCRouter class]]) {
+            self.VCDelegate = self.delegate;
+        }
+    }
+    [self _setDelegate:delegate];
+}
+
+- (id<UINavigationControllerDelegate>)VCDelegate
+{
+    return objc_getAssociatedObject(self, VCRouterDelegateKey);
+}
+
+- (void)setVCDelegate:(id<UINavigationControllerDelegate>)VCDelegate
+{
+    objc_setAssociatedObject(self, VCRouterDelegateKey, VCDelegate, OBJC_ASSOCIATION_ASSIGN);
+}
+
+@end
+
+
+//
+// VCRouter
+//
+@interface VCRouter () <UINavigationControllerDelegate>
+
+@property (nonatomic, getter = isAnimated) BOOL animated;
+
+@end
+
+//
+// VCRouter UINavigationControllerDelegate
+//
+@implementation VCRouter (UINavigationControllerDelegate)
+
+#pragma mark - UINavigationControllerDelegate
+
+- (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    self.animated = animated;
+    if (navigationController.VCDelegate &&
+        [navigationController.VCDelegate respondsToSelector:@selector(navigationController:willShowViewController:animated:)]) {
+        [navigationController.VCDelegate navigationController:navigationController willShowViewController:viewController animated:animated];
+    }
+}
+- (void)navigationController:(UINavigationController *)navigationController didShowViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    self.animated = NO;
+    if (navigationController.VCDelegate &&
+        [navigationController.VCDelegate respondsToSelector:@selector(navigationController:didShowViewController:animated:)]) {
+        [navigationController.VCDelegate navigationController:navigationController didShowViewController:viewController animated:animated];
+    }
+}
+
+- (NSUInteger)navigationControllerSupportedInterfaceOrientations:(UINavigationController *)navigationController
+{
+    if (navigationController.VCDelegate &&
+        [navigationController.VCDelegate respondsToSelector:@selector(navigationControllerSupportedInterfaceOrientations:)]) {
+        return [navigationController.VCDelegate navigationControllerSupportedInterfaceOrientations:navigationController];
+    }
+    return -1;
+}
+
+- (UIInterfaceOrientation)navigationControllerPreferredInterfaceOrientationForPresentation:(UINavigationController *)navigationController
+{
+    if (navigationController.VCDelegate &&
+        [navigationController.VCDelegate respondsToSelector:@selector(navigationControllerPreferredInterfaceOrientationForPresentation:)]) {
+        return [navigationController.VCDelegate navigationControllerPreferredInterfaceOrientationForPresentation:navigationController];
+    }
+    return -1;
+}
+
+- (id <UIViewControllerInteractiveTransitioning>)navigationController:(UINavigationController *)navigationController
+                          interactionControllerForAnimationController:(id <UIViewControllerAnimatedTransitioning>) animationController
+{
+    if (navigationController.VCDelegate &&
+        [navigationController.VCDelegate respondsToSelector:@selector(navigationController:interactionControllerForAnimationController:)]) {
+        return [navigationController.VCDelegate navigationController:navigationController interactionControllerForAnimationController:animationController];
+    }
+    return nil;
+}
+
+- (id <UIViewControllerAnimatedTransitioning>)navigationController:(UINavigationController *)navigationController
+                                   animationControllerForOperation:(UINavigationControllerOperation)operation
+                                                fromViewController:(UIViewController *)fromVC
+                                                  toViewController:(UIViewController *)toVC
+{
+    if (navigationController.VCDelegate &&
+        [navigationController.VCDelegate respondsToSelector:@selector(navigationController:animationControllerForOperation:fromViewController:toViewController:)]) {
+        return [navigationController.VCDelegate navigationController:navigationController
+                                     animationControllerForOperation:operation
+                                                  fromViewController:fromVC
+                                                    toViewController:toVC];
+    }
+    return nil;
+}
+
+@end
+
+//
+// VCRouter
+//
+@implementation VCRouter
+
+static id _instance = nil;
+
++ (instancetype)mainRouter
+{
+    @synchronized(self) {
+        if (!_instance) {
+            _instance = [[self alloc] init];
+        }
+    }
+    return _instance;
+}
+
+#pragma mark - accessor
+
+- (UINavigationController *)navigationController
+{
+    if (!self.window || !self.window.rootViewController) {
+        return nil;
+    }
+
+    Class class = [self.window.rootViewController class];
+
+    // type UITabBarController
+    if ([class isSubclassOfClass:[UITabBarController class]] ||
+        [self.window.rootViewController respondsToSelector:@selector(selectedViewController)]) {
+        UITabBarController *tabBarController = (UITabBarController *)self.window.rootViewController;
+        return (UINavigationController *)tabBarController.selectedViewController;
+    }
+
+    // type UINavigationController
+    if ([class isSubclassOfClass:[UINavigationController class]]) {
+        return (UINavigationController *)self.window.rootViewController;
+    }
+
+    return nil;
+}
+
+- (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    if (self.navigationController.delegate != self) {
+        self.navigationController.delegate = self;
+    }
+
+    if (self.animated) {
+        return;
+    }
+    self.animated = animated;
+
+    if (![self canStackViewController:viewController]) {
+        [self popViewControllerWithSameClass:[viewController class]];
+    }
+    [self.navigationController pushViewController:viewController animated:animated];
+}
+
+- (BOOL)canStackViewController:(UIViewController *)viewController
+{
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(vcRouter:canStackViewController:)]) {
+        return [self.delegate vcRouter:self canStackViewController:viewController];
+    }
+    return NO;
+}
+
+- (void)popViewControllerWithSameClass:(Class)aClass
+{
+    NSInteger index = [self.navigationController.viewControllers indexOfViewControllerWithClass:aClass];
+    if (index != NSNotFound) {
+        NSMutableArray *viewControllers = [self.navigationController.viewControllers mutableCopy];
+        [viewControllers removeObjectAtIndex:index];
+        self.navigationController.viewControllers = [viewControllers copy];
+    }
+}
+
+@end
