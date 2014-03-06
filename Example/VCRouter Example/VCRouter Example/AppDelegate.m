@@ -58,7 +58,7 @@
 
     int countOfSameClass = 0;
     for (UIViewController *vc in router.navigationController.viewControllers) {
-        if ([viewController isMemberOfClass:aClass]) {
+        if ([vc isMemberOfClass:aClass]) {
             countOfSameClass++;
         }
     }
