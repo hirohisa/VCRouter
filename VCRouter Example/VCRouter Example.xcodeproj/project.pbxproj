@@ -15,7 +15,7 @@
 		653BC01F18AB3758006E45B1 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 653BC01E18AB3758006E45B1 /* AppDelegate.m */; };
 		653BC02118AB3758006E45B1 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 653BC02018AB3758006E45B1 /* Images.xcassets */; };
 		653BC03F18AB6406006E45B1 /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 653BC03E18AB6406006E45B1 /* DemoViewController.m */; };
-		653BC04618AB6494006E45B1 /* VCRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = 653BC04418AB6494006E45B1 /* VCRouter.m */; };
+		65DF03CC18CD9394008EA54F /* VCRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = 65DF03CB18CD9394008EA54F /* VCRouter.m */; };
 		A1A43E7518AE18F3009F271B /* EXVCRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = A1A43E7418AE18F3009F271B /* EXVCRouter.m */; };
 /* End PBXBuildFile section */
 
@@ -34,8 +34,8 @@
 		653BC02718AB3758006E45B1 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		653BC03D18AB6406006E45B1 /* DemoViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DemoViewController.h; sourceTree = "<group>"; };
 		653BC03E18AB6406006E45B1 /* DemoViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
-		653BC04318AB6494006E45B1 /* VCRouter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VCRouter.h; sourceTree = "<group>"; };
-		653BC04418AB6494006E45B1 /* VCRouter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VCRouter.m; sourceTree = "<group>"; };
+		65DF03CA18CD9394008EA54F /* VCRouter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VCRouter.h; sourceTree = "<group>"; };
+		65DF03CB18CD9394008EA54F /* VCRouter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VCRouter.m; sourceTree = "<group>"; };
 		A1A43E7318AE18F3009F271B /* EXVCRouter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EXVCRouter.h; sourceTree = "<group>"; };
 		A1A43E7418AE18F3009F271B /* EXVCRouter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EXVCRouter.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -57,7 +57,7 @@
 		653BC00218AB3758006E45B1 = {
 			isa = PBXGroup;
 			children = (
-				653BC04018AB6494006E45B1 /* VCRouter */,
+				65DF03C918CD9394008EA54F /* VCRouter */,
 				653BC01418AB3758006E45B1 /* VCRouter Example */,
 				653BC00D18AB3758006E45B1 /* Frameworks */,
 				653BC00C18AB3758006E45B1 /* Products */,
@@ -109,14 +109,14 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		653BC04018AB6494006E45B1 /* VCRouter */ = {
+		65DF03C918CD9394008EA54F /* VCRouter */ = {
 			isa = PBXGroup;
 			children = (
-				653BC04318AB6494006E45B1 /* VCRouter.h */,
-				653BC04418AB6494006E45B1 /* VCRouter.m */,
+				65DF03CA18CD9394008EA54F /* VCRouter.h */,
+				65DF03CB18CD9394008EA54F /* VCRouter.m */,
 			);
 			name = VCRouter;
-			path = ../../VCRouter;
+			path = ../VCRouter;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -182,7 +182,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				653BC04618AB6494006E45B1 /* VCRouter.m in Sources */,
+				65DF03CC18CD9394008EA54F /* VCRouter.m in Sources */,
 				653BC03F18AB6406006E45B1 /* DemoViewController.m in Sources */,
 				A1A43E7518AE18F3009F271B /* EXVCRouter.m in Sources */,
 				653BC01F18AB3758006E45B1 /* AppDelegate.m in Sources */,
