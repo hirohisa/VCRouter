@@ -46,17 +46,17 @@ void VCSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 + (void)load
 {
-    VCSwizzleInstanceMethod([self class], @selector(setRootViewController:), @selector(_setRootViewController:));
+    VCSwizzleInstanceMethod([self class], @selector(setRootViewController:), @selector(vc_setRootViewController:));
 }
 
-- (void)_setRootViewController:(UIViewController *)rootViewController
+- (void)vc_setRootViewController:(UIViewController *)rootViewController
 {
     if (self.rootViewController) {
         for (UIView *view in self.subviews) {
             [view removeFromSuperview];
         }
     }
-    [self _setRootViewController:rootViewController];
+    [self vc_setRootViewController:rootViewController];
 }
 
 @end
@@ -73,17 +73,17 @@ static const char *VCRouterDelegateKey = "VCRouterDelegateKey";
 
 + (void)load
 {
-    VCSwizzleInstanceMethod([self class], @selector(setDelegate:), @selector(_setDelegate:));
+    VCSwizzleInstanceMethod([self class], @selector(setDelegate:), @selector(vc_setDelegate:));
 }
 
-- (void)_setDelegate:(id<UINavigationControllerDelegate>)delegate
+- (void)vc_setDelegate:(id<UINavigationControllerDelegate>)delegate
 {
     if (self.delegate) {
         if ([[delegate class] isSubclassOfClass:[VCRouter class]]) {
             self.VCDelegate = self.delegate;
         }
     }
-    [self _setDelegate:delegate];
+    [self vc_setDelegate:delegate];
 }
 
 - (id<UINavigationControllerDelegate>)VCDelegate
