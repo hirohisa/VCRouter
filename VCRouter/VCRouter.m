@@ -40,6 +40,15 @@ void VCSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 @end
 
 //
+// VCRouter
+//
+@interface VCRouter () <UINavigationControllerDelegate>
+
+@property (nonatomic, getter = isAnimated) BOOL animated;
+
+@end
+
+//
 // UIWindow
 //
 @implementation UIWindow (VCRouter)
@@ -74,6 +83,9 @@ static const char *VCRouterDelegateKey = "VCRouterDelegateKey";
 + (void)load
 {
     VCSwizzleInstanceMethod([self class], @selector(setDelegate:), @selector(vc_setDelegate:));
+    VCSwizzleInstanceMethod([self class], @selector(popViewControllerAnimated:), @selector(vc_popViewControllerAnimated:));
+    VCSwizzleInstanceMethod([self class], @selector(popToViewController:animated:), @selector(vc_popToViewController:animated:));
+    VCSwizzleInstanceMethod([self class], @selector(popToRootViewControllerAnimated:), @selector(vc_popToRootViewControllerAnimated:));
 }
 
 - (void)vc_setDelegate:(id<UINavigationControllerDelegate>)delegate
@@ -96,15 +108,50 @@ static const char *VCRouterDelegateKey = "VCRouterDelegateKey";
     objc_setAssociatedObject(self, VCRouterDelegateKey, VCDelegate, OBJC_ASSOCIATION_ASSIGN);
 }
 
-@end
+- (UIViewController *)vc_popViewControllerAnimated:(BOOL)animated
+{
+    if (![self isAnimating]) {
+        [self vc_configureWithAnimated:animated];
+        return [self vc_popViewControllerAnimated:animated];
+    }
+    return nil;
+}
 
+- (NSArray *)vc_popToViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    if (![self isAnimating]) {
+        [self vc_configureWithAnimated:animated];
+        return [self vc_popToViewController:viewController animated:animated];
+    }
+    return nil;
+}
 
-//
-// VCRouter
-//
-@interface VCRouter () <UINavigationControllerDelegate>
+- (NSArray *)vc_popToRootViewControllerAnimated:(BOOL)animated
+{
+    if (![self isAnimating]) {
+        [self vc_configureWithAnimated:animated];
+        return [self vc_popToRootViewControllerAnimated:animated];
+    }
+    return nil;
+}
 
-@property (nonatomic, getter = isAnimated) BOOL animated;
+- (BOOL)isAnimating
+{
+    if ([self.delegate isKindOfClass:[VCRouter class]]) {
+        VCRouter *delegate = (VCRouter *)self.delegate;
+        return delegate.animated;
+    }
+    return NO;
+}
+
+- (void)vc_configureWithAnimated:(BOOL)animated
+{
+    if ([self.delegate isKindOfClass:[VCRouter class]] &&
+        [self.viewControllers count] > 1) {
+        VCRouter *delegate = (VCRouter *)self.delegate;
+        delegate.animated = animated;
+    }
+}
 
 @end
 
