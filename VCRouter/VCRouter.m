@@ -70,6 +70,65 @@ void VCSwizzleInstanceMethod(Class c, SEL original, SEL alternative)
 
 @end
 
+//
+// UIVieController
+//
+@implementation UIViewController (VCRouter)
+
++ (void)load
+{
+    VCSwizzleInstanceMethod([self class], @selector(presentModalViewController:animated:), @selector(vc_presentModalViewController:animated:));
+    VCSwizzleInstanceMethod([self class], @selector(presentViewController:animated:completion:), @selector(vc_presentViewController:animated:completion:));
+}
+
+- (void)vc_presentModalViewController:(UIViewController *)modalViewController animated:(BOOL)animated
+{
+    if ([self vc_canPresentViewController]) {
+        VCRouter *router = (VCRouter *)self.navigationController.delegate;
+        router.animated = animated;
+        [self vc_presentModalViewController:modalViewController animated:animated];
+        [self performSelectorOnMainThread:@selector(vc_animationDidEnd) withObject:nil waitUntilDone:YES];
+    }
+}
+
+- (void)vc_presentViewController:(UIViewController *)viewControllerToPresent animated:(BOOL)flag completion:(void (^)(void))completion
+{
+    if ([self vc_canPresentViewController]) {
+        VCRouter *router = (VCRouter *)self.navigationController.delegate;
+        router.animated = flag;
+        [self vc_presentViewController:viewControllerToPresent animated:flag completion:^{
+            router.animated = NO;
+            if (completion) {
+                completion();
+            }
+        }];
+    }
+}
+
+- (BOOL)vc_canPresentViewController
+{
+    if ([self.navigationController.delegate isKindOfClass:[VCRouter class]]) {
+        VCRouter *router = (VCRouter *)self.navigationController.delegate;
+        if (router.animated) {
+            return NO;
+        }
+    }
+
+    return YES;
+}
+
+- (void)vc_animationDidEnd
+{
+    NSLog(@"%s", __func__);
+    VCRouter *router = (VCRouter *)self.navigationController.delegate;
+    router.animated = NO;
+}
+
+@end
+
+//
+// UINavigationController
+//
 @interface UINavigationController (VCRouter)
 
 @property (nonatomic, assign) id<UINavigationControllerDelegate> VCDelegate;
@@ -266,15 +325,22 @@ static id _instance = nil;
     return nil;
 }
 
+- (void)setAnimated:(BOOL)animated
+{
+    NSLog(@"%s animated %d", __func__, animated);
+    _animated = animated;
+}
+
 - (void)pushViewController:(UIViewController *)viewController animated:(BOOL)animated
 {
     if (self.navigationController.delegate != self) {
         self.navigationController.delegate = self;
     }
 
-    if (self.animated) {
+    if (![self canTransit]) {
         return;
     }
+
     self.animated = animated;
 
     if (![self canStackViewController:viewController]) {
@@ -290,6 +356,20 @@ static id _instance = nil;
         return [self.delegate vcRouter:self canStackViewController:viewController];
     }
     return NO;
+}
+
+- (BOOL)canTransit
+{
+    if (self.animated) {
+        return NO;
+    }
+
+    UIViewController *viewController = [self.navigationController.viewControllers lastObject];
+    if (viewController.presentedViewController) {
+        return !viewController.presentedViewController.isBeingPresented;
+    }
+
+    return YES;
 }
 
 - (void)popViewControllerWithSameClass:(Class)aClass

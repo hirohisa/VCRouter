@@ -9,7 +9,7 @@
 #import "DemoViewController.h"
 #import "EXVCRouter.h"
 
-@interface DemoViewController ()
+@interface DemoViewController () <UINavigationControllerDelegate>
 
 @end
 
@@ -63,6 +63,26 @@
         .y = 200
     };
     [self.view addSubview:pushAndPopButton];
+
+    UIButton *pushAndModalButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    [pushAndModalButton setTitle:@"push/modal" forState:UIControlStateNormal];
+    [pushAndModalButton addTarget:self action:@selector(pushAndModal:) forControlEvents:UIControlEventTouchUpInside];
+    [pushAndModalButton sizeToFit];
+    pushAndModalButton.center = (CGPoint) {
+        .x = 240,
+        .y = 240
+    };
+    [self.view addSubview:pushAndModalButton];
+
+    UIButton *modalAndPushButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    [modalAndPushButton setTitle:@"modal/push" forState:UIControlStateNormal];
+    [modalAndPushButton addTarget:self action:@selector(modalAndPush:) forControlEvents:UIControlEventTouchUpInside];
+    [modalAndPushButton sizeToFit];
+    modalAndPushButton.center = (CGPoint) {
+        .x = 240,
+        .y = 280
+    };
+    [self.view addSubview:modalAndPushButton];
 }
 
 - (void)pushVC:(id)sender
@@ -111,5 +131,55 @@
     // pop
     [self.navigationController popViewControllerAnimated:YES];
 }
+
+- (void)pushAndModal:(id)sender
+{
+    int index = [self.navigationController.viewControllers count];
+
+    DemoViewController *viewController = [[DemoViewController alloc]initWithNibName:nil bundle:nil];
+    viewController.title = [NSString stringWithFormat:@"%d", index];
+    [[EXVCRouter mainRouter] pushViewController:viewController animated:YES];
+
+    // modal
+    DemoViewController *viewController2 = [[DemoViewController alloc]initWithNibName:nil bundle:nil];
+    viewController2.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"close"
+                                                                                       style:UIBarButtonItemStyleDone
+                                                                                      target:self
+                                                                                      action:@selector(dismissModalViewControllerAnimated:)];
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:viewController2];
+    [self presentModalViewController:navigationController animated:YES];
+    //[self presentViewController:navigationController animated:YES completion:NULL];
+}
+
+- (void)modalAndPush:(id)sender
+{
+    int index = [self.navigationController.viewControllers count];
+
+    DemoViewController *viewController = [[DemoViewController alloc]initWithNibName:nil bundle:nil];
+    viewController.title = [NSString stringWithFormat:@"%d", index];
+    viewController.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"close"
+                                                                                       style:UIBarButtonItemStyleDone
+                                                                                      target:self
+                                                                                      action:@selector(dismissModalViewControllerAnimated:)];
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:viewController];
+    [self presentModalViewController:navigationController animated:YES];
+    //[self presentViewController:navigationController animated:YES completion:NULL];
+
+    // modal
+    DemoViewController *viewController2 = [[DemoViewController alloc]initWithNibName:nil bundle:nil];
+    [[EXVCRouter mainRouter] pushViewController:viewController2 animated:YES];
+}
+
+
+- (void)navigationController:(UINavigationController *)navigationController willShowViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    NSLog(@"%s", __func__);
+}
+
+- (void)navigationController:(UINavigationController *)navigationController didShowViewController:(UIViewController *)viewController animated:(BOOL)animated
+{
+    NSLog(@"%s", __func__);
+}
+
 
 @end
